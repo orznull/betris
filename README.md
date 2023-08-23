@@ -1,34 +1,43 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Betris
 
-## Getting Started
+lightweight, quickly moddable multiplayer ~~tetris~~ block stacker. it's competitive if everyone agrees not to cheat :)
 
-First, run the development server:
+## todo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+sprint 1
+- controller class
+- timers
+- big das / arr
+- controls setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+sprint 2
+- damage calc
+- additional operations (set board, add garbage)
+- garbage bar drawing
+- death logic
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+sprint 3
+- socket code
+- room creation
+- online controller
+- multiplayer gaming
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-## Learn More
+sprint 4
+- spectator mode
 
-To learn more about Next.js, take a look at the following resources:
+sprint 5
+- mod submission / setup
+- more ruleset options, for easier modding
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+stretch and beyond
+- replays
+- controller support
+- local support
+- line clear delay
+- keyboard overlay?
+- making 900 billion fun gamemodes!!!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## credit
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+a lot of the base game logic was taken from the [blockfish visualizer](https://github.com/blockfish/blockfish-visualizer). tysm to iitalics for letting me use it...
