@@ -7,9 +7,9 @@ lightweight, quickly moddable multiplayer ~~tetris~~ block stacker. it's competi
 sprint 1
 x- controller class
 x- timers
-- das / arr
-- controls setup
-- seeded random
+x big das / arr
+- controls form / setup
+- seeded random for queue
 
 sprint 2
 - damage calc
@@ -22,7 +22,6 @@ sprint 3
 - room creation
 - online controller
 - multiplayer gaming
-
 
 sprint 4
 - spectator mode
@@ -39,6 +38,17 @@ stretch and beyond
 - keyboard overlay?
 - making 900 billion fun gamemodes!!!
 
+## run
+
+it's a next app man
+
+```
+npm i
+npm run dev
+```
+
+
 ## credit
 
 a lot of the base game logic was taken from the [blockfish visualizer](https://github.com/blockfish/blockfish-visualizer). tysm to iitalics for letting me use it...
+

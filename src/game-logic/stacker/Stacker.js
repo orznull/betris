@@ -253,11 +253,11 @@ export class Stacker {
         this.incomingGarbage.push({ height, col })
     }
 
-    is_piece_on_floor() {
+    isPieceOnFloor() {
         return this.#intersects({ ...this.piece, y: this.piece.y - 1 })
     }
 
-    is_piece_on_wall(dir) {
+    isPieceOnWall(dir) {
         return this.#intersects({ ...this.piece, x: this.piece.x + dir })
     }
 

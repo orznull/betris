@@ -5,8 +5,8 @@ export class PlayerController {
   // These two fields will automatically populate the config menu.
   static DEFAULT_CONFIG = {
     DAS: 80,
-    ARR: 0,
-    SOFT_DROP_ARR: 0,
+    ARR: 1,
+    SOFT_DROP_ARR: 1,
     CANCEL_DAS_ON_DIRECTION_CHANGE: true
     // ... add any additional 
   }
@@ -52,10 +52,10 @@ export class PlayerController {
     }
 
     this.stacker.on("spawn", () => {
-      this.set_timer('gravity', this.ruleset.timers.gravity)
-      this.set_timer('maximumTimeBeforeLock', this.ruleset.timers.maximumTimeBeforeLock)
-      this.clear_timer('lockDelay');
-      this.clear_timer('lockDelayExtension');
+      this.setTimer('gravity', this.ruleset.timers.gravity)
+      this.setTimer('maximumTimeBeforeLock', this.ruleset.timers.maximumTimeBeforeLock)
+      this.clearTimer('lockDelay');
+      this.clearTimer('lockDelayExtension');
     })
   }
 
@@ -86,95 +86,103 @@ export class PlayerController {
     return (new Date).getTime() - this.pressed[action]
   }
 
-  set_timer(timer, time_in_millis) {
+  setTimer(timer, time_in_millis) {
     this.timers[timer] = (new Date).getTime() + time_in_millis
   }
 
-  clear_timer(timer) {
+  clearTimer(timer) {
     delete this.timers[timer];
   }
 
   // returns NaN if undefined
-  get_time_remaining(timer) {
+  getTimeRemaining(timer) {
     return this.timers[timer] - (new Date).getTime();
   }
 
-  timer_ended(timer) {
-    return this.get_time_remaining(timer) <= 0
+  timerEnded(timer) {
+    return this.getTimeRemaining(timer) <= 0
   }
 
-  process_controls() {
-    if (
-      this.is_pressed('LEFT') &&
-      (!this.is_pressed('RIGHT') || this.time_since_pressed('LEFT') < this.time_since_pressed('RIGHT'))
-    ) {
-      if (this.is_just_pressed('LEFT')) {
-        this.apply('left');
-        // cancel the RIGHT das charge when changing directions
-        if (this.is_pressed('RIGHT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
-          this.pressed['RIGHT'] = (new Date).getTime();
-        }
-      } else {
-        if (this.time_since_pressed('LEFT') > this.config.DAS) {
-          this.apply('left+')
-          // TODO: non zero arr
-        }
+  processControls() {
+
+    if (this.is_just_pressed('LEFT')) {
+      this.apply('left');
+      this.setTimer('das_left', this.config.DAS);
+      // reset the RIGHT das charge when changing directions (if enabled)
+      if (this.is_pressed('RIGHT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
+        this.setTimer('das_right', this.config.DAS);
       }
-    } else if (this.is_pressed('RIGHT')) {
-      if (this.is_just_pressed('RIGHT')) {
-        // cancel the LEFT das charge when changing directions
-        if (this.is_pressed('LEFT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
-          this.pressed['LEFT'] = (new Date).getTime();
-        }
-        this.apply('right');
-      } else {
-        if (this.time_since_pressed('RIGHT') > this.config.DAS) {
-          this.apply('right+')
-          // TODO: non zero arr
-        }
+    } if (!this.is_pressed("LEFT")) {
+      this.clearTimer("das_left");
+      this.clearTimer("arr_left");
+    }
+
+    if (this.is_just_pressed('RIGHT')) {
+      this.apply('right');
+      this.setTimer('das_right', this.config.DAS);
+      // reset the LEFT das charge when changing directions (if enabled)
+      if (this.is_pressed('LEFT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
+        this.setTimer('das_left', this.config.DAS);
       }
+    } else if (!this.is_pressed("RIGHT")) {
+      this.clearTimer("das_right");
+      this.clearTimer("arr_right");
     }
-    if (this.is_just_pressed('START')) {
-      this.apply('start');
-    }
+
     if (this.is_just_pressed('SOFT_DROP')) {
-      // TODO: Soft drop arr
-      this.apply('sd+')
+      this.apply(this.config.SOFT_DROP_ARR == 0 ? 'sd+' : 'sd');
+      this.setTimer('arr_sd', this.config.SOFT_DROP_ARR);
+    } else if (!this.is_pressed('SOFT_DROP')) {
+      this.clearTimer('arr_sd')
     }
-    if (this.is_just_pressed('COUNTER_CLOCKWISE'))
-      this.apply('ccw');
 
-    if (this.is_just_pressed('CLOCKWISE'))
-      this.apply('cw');
-
-    if (this.is_just_pressed('180'))
-      this.apply('180');
-
-    if (this.is_just_pressed('HARD_DROP'))
-      this.apply('hd');
-
-    if (this.is_just_pressed('HOLD'))
-      this.apply('hold');
+    if (this.is_just_pressed('START')) this.apply('start');
+    if (this.is_just_pressed('COUNTER_CLOCKWISE')) this.apply('ccw');
+    if (this.is_just_pressed('CLOCKWISE')) this.apply('cw');
+    if (this.is_just_pressed('180')) this.apply('180');
+    if (this.is_just_pressed('HARD_DROP')) this.apply('hd');
+    if (this.is_just_pressed('HOLD')) this.apply('hold');
   }
 
-  process_timers() {
+  processTimers() {
     // gravity
-    if (this.timer_ended("gravity")) {
+    if (this.timerEnded("gravity")) {
       this.apply('sd');
-      this.set_timer('gravity', this.ruleset.timers.gravity)
+      this.setTimer('gravity', this.ruleset.timers.gravity)
     }
 
     // das / arr
+    if (this.timerEnded("das_left")) {
+      if (Number.isNaN(this.getTimeRemaining("arr_left")))
+        this.setTimer("arr_left", this.config.ARR);
+      // checking if on wall so we don't spam this apply if we don't need to
+      if (this.timerEnded("arr_left") && !this.stacker.isPieceOnWall(-1)) {
+        this.apply(this.config.ARR == 0 ? "left+" : "left");
+        this.setTimer("arr_left", this.config.ARR);
+      }
+    }
 
+    if (this.timerEnded("das_right")) {
+      if (Number.isNaN(this.getTimeRemaining("arr_right")))
+        this.setTimer("arr_right", this.config.ARR);
+      // checking if on wall so we don't spam this apply if we don't need to
+      if (this.timerEnded("arr_right") && !this.stacker.isPieceOnWall(1)) {
+        this.apply(this.config.ARR == 0 ? "right+" : "right");
+        this.setTimer("arr_right", this.config.ARR);
+      }
+    }
 
     // soft drop arr
-
+    if (this.timerEnded("arr_sd") && !this.stacker.isPieceOnFloor()) {
+      this.apply(this.config.SOFT_DROP_ARR == 0 ? 'sd+' : 'sd');
+      this.setTimer('arr_sd', this.config.SOFT_DROP_ARR);
+    }
 
     // lock delay logic
-    if (this.stacker.is_piece_on_floor()) {
+    if (this.stacker.isPieceOnFloor()) {
       if (!this.was_on_floor) {
-        this.set_timer('lockDelay', this.ruleset.timers.lockDelay);
-        this.set_timer('lockDelayExtension', this.ruleset.timers.maximumLockDelayExtension);
+        this.setTimer('lockDelay', this.ruleset.timers.lockDelay);
+        this.setTimer('lockDelayExtension', this.ruleset.timers.maximumLockDelayExtension);
       }
 
       if (this.previousPiecePosition && (
@@ -182,18 +190,18 @@ export class PlayerController {
         this.previousPiecePosition.y != this.stacker.piece.y ||
         this.previousPiecePosition.r != this.stacker.piece.r)
       ) {
-        this.set_timer('lockDelay', this.ruleset.timers.lockDelay);
+        this.setTimer('lockDelay', this.ruleset.timers.lockDelay);
       }
     } else {
-      this.clear_timer('lockDelay');
-      this.clear_timer('lockDelayExtension');
+      this.clearTimer('lockDelay');
+      this.clearTimer('lockDelayExtension');
     }
     this.previousPiecePosition = { ...this.stacker.piece }
-    this.was_on_floor = this.stacker.is_piece_on_floor();
+    this.was_on_floor = this.stacker.isPieceOnFloor();
 
-    if (this.timer_ended("maximumTimeBeforeLock") ||
-      this.timer_ended("lockDelay") ||
-      this.timer_ended("lockDelayExtension")
+    if (this.timerEnded("maximumTimeBeforeLock") ||
+      this.timerEnded("lockDelay") ||
+      this.timerEnded("lockDelayExtension")
     ) {
       this.apply('hd');
     }
@@ -201,9 +209,9 @@ export class PlayerController {
   }
 
   // override this function if you have anything you want to process every frame (60fps)
-  process() {
-    this.process_controls()
-    this.process_timers()
+  process(delta) {
+    this.processControls()
+    this.processTimers()
   }
 
   // run the loop, preferred if you override process functions if you want to change something
