@@ -103,7 +103,7 @@ export class Stacker {
 
     #refillQueue() {
         while (this.queue.length < this.ruleset.previews) {
-            if (this._bag.length === 0) {
+            if (!this._bag || this._bag.length === 0) {
                 this._bag = Object.keys(this.ruleset.shapes).slice(0);
             }
             let i = Math.floor(Math.random() * this._bag.length);
@@ -213,35 +213,29 @@ export class Stacker {
 
     minos({ type, rotation }) {
         let rotate;
+        let [offsetX, offsetY] = this.ruleset.shapes[type]?.rotationOffsets?.[rotation] || [0, 0];
         switch (rotation) {
-            case 'spawn': rotate = xy => xy; break;
-            case 'right': rotate = ([x, y]) => ([y, -x]); break;
-            case 'reverse': rotate = ([x, y]) => ([-x, -y]); break;
-            case 'left': rotate = ([x, y]) => ([-y, x]); break;
+            case 'spawn': rotate = ([x, y]) => [x + offsetX, y + offsetY]; break;
+            case 'right': rotate = ([x, y]) => ([y + offsetX, -x + offsetY]); break;
+            case 'reverse': rotate = ([x, y]) => ([-x + offsetX, -y + offsetY]); break;
+            case 'left': rotate = ([x, y]) => ([-y + offsetX, x + offsetY]); break;
         }
         return this.ruleset.shapes[type].coords.map(rotate);
     }
 
-    // this was originally written with SRS in mind
-    // probably requires a bigger rewrite if you want to do any kind of other kick table.
-    // sorry i don't know a lot about this lol
-    // https://harddrop.com/wiki/SRS#How_Guideline_SRS_Really_Works
 
+    // read through https://harddrop.com/wiki/SRS to understand kicks
+    // the tree goes: shape -> initial rotation -> spin type -> different positions it will try
+    // the default kicks are jstris's
+    // edit the ruleset for your own poggers kicks
     #kicks({ type, rotation }, spin) {
-        let r0 = rotation;
-        let r1 = ROTATE[r0][spin];
-        let offsets = this.ruleset.offsets[this.ruleset.shapes[type].offsets];
-        let tfs = [];
-        for (let i = 0; i < offsets.spawn.length; i++) {
-            let [x0, y0] = offsets[r0][i];
-            let [x1, y1] = offsets[r1][i];
-            tfs.push({
-                dx: x0 - x1,
-                dy: y0 - y1,
-                r: r1,
-            });
-        }
-        return tfs;
+        let toRotation = ROTATE[rotation][spin];
+        let kicks = this.ruleset.kicks[type][rotation][spin];
+        return kicks.map(([dx, dy]) => ({
+            dx,
+            dy,
+            r: toRotation
+        }));
     }
 
     #addGarbage(height, col) {
@@ -256,11 +250,15 @@ export class Stacker {
     }
 
     #addIncomingGarbage(height, col) {
-        this.incomingGarbage.push({height, col})
+        this.incomingGarbage.push({ height, col })
     }
 
-    is_piece_on_ground() {
-        return this.piece.y == this.ghostY;
+    is_piece_on_floor() {
+        return this.#intersects({ ...this.piece, y: this.piece.y - 1 })
+    }
+
+    is_piece_on_wall(dir) {
+        return this.#intersects({ ...this.piece, x: this.piece.x + dir })
     }
 
 
@@ -276,14 +274,15 @@ export class Stacker {
         switch (op) {
 
             case 'start':
-                this.#refillQueue();
                 this.hold = '';
                 this.matrix = [];
                 this.piece = null;
+                this.queue = [];
+                this._bag = [];
+                this.#refillQueue();
                 this.#spawn();
-                this._bag = []
                 break;
-                
+
             case 'hold':
                 let hold = this.hold;
                 this.hold = this.piece ? this.piece.type : '';
@@ -335,7 +334,7 @@ export class Stacker {
             default:
                 break;
         }
-        
+
         this.#emit("action", { operation: op, context })
     }
 }

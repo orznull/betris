@@ -1,59 +1,76 @@
 import keycode from "keycode";
 
 export class PlayerController {
-  
-  constructor(stacker, binds, config, socket) {
-    Object.assign(this, {
-      stacker,
-      socket,
-      pressed: {},
-      previousPressed: {},
-      keybinds: {},
-      stopped: false,
-    })
-
-    this.keybinds = { ...PlayerController.DEFAULT_KEYBINDS, ...binds }
-    this.config = { ...PlayerController.DEFAULT_CONFIG, ...config }
-
-    // TODO: emit events to websocket
-    if (this.socket)
-      this.stacker.addListener(() => {});
-
-  }
 
   // These two fields will automatically populate the config menu.
   static DEFAULT_CONFIG = {
-    DAS: 90,
+    DAS: 80,
     ARR: 0,
     SOFT_DROP_ARR: 0,
     CANCEL_DAS_ON_DIRECTION_CHANGE: true
     // ... add any additional 
   }
   static DEFAULT_KEYBINDS = {
-    START:'r',
-    
-    LEFT:'j',
-    RIGHT:'l',
-    COUNTER_CLOCKWISE:'a',
-    CLOCKWISE:'s',
-    HOLD:'d',
+    START: 'r',
+    LEFT: 'j',
+    RIGHT: 'l',
+    COUNTER_CLOCKWISE: 'a',
+    CLOCKWISE: 's',
+    HOLD: 'd',
     '180': 'w',
-    SOFT_DROP:'k',
-    HARD_DROP:'space',
+    SOFT_DROP: 'k',
+    HARD_DROP: 'space',
     // ... add additional keybinds for additional actions if desired
   };
 
+
+  constructor(stacker, binds, config, socket) {
+    Object.assign(this, {
+      stacker,
+      ruleset: stacker.ruleset,
+      socket,
+      pressed: {},
+      previousPressed: {},
+      timers: {},
+      actionKeybinds: {},
+      stopped: false,
+    })
+
+    this.actionKeybinds = { ...PlayerController.DEFAULT_KEYBINDS, ...binds }
+    this.config = { ...PlayerController.DEFAULT_CONFIG, ...config }
+
+    this.init_listeners()
+
+  }
+
+  init_listeners() {
+
+    // TODO: emit events to websocket
+    if (this.socket) {
+      this.stacker.addListener(() => { });
+      // TODO: take in socket events
+    }
+
+    this.stacker.on("spawn", () => {
+      this.set_timer('gravity', this.ruleset.timers.gravity)
+      this.set_timer('maximumTimeBeforeLock', this.ruleset.timers.maximumTimeBeforeLock)
+      this.clear_timer('lockDelay');
+      this.clear_timer('lockDelayExtension');
+    })
+  }
+
+  // Pressing records time of press, for DAS timers and whatnot.
   press(key) {
-    for (let action in this.keybinds) {
-      if (keycode(this.keybinds[action]) == key && !this.pressed[action]) { 
+    for (let action in this.actionKeybinds) {
+      if (keycode(this.actionKeybinds[action]) == key && !this.pressed[action]) {
         this.pressed[action] = (new Date).getTime();
       }
     }
   }
 
   release(key) {
-    for (let action in this.keybinds)
-      if (keycode(this.keybinds[action]) == key) 
+    for (let action in this.actionKeybinds)
+      if (keycode(this.actionKeybinds[action]) == key)
         delete this.pressed[action];
   }
 
@@ -69,22 +86,33 @@ export class PlayerController {
     return (new Date).getTime() - this.pressed[action]
   }
 
-  // override this function if you have anything you want to process every frame
-  // run every frame (60fps)
-  process(delta) {
+  set_timer(timer, time_in_millis) {
+    this.timers[timer] = (new Date).getTime() + time_in_millis
+  }
 
-    if (this.is_just_pressed('START')) {
-      this.apply('start');
-    }
+  clear_timer(timer) {
+    delete this.timers[timer];
+  }
+
+  // returns NaN if undefined
+  get_time_remaining(timer) {
+    return this.timers[timer] - (new Date).getTime();
+  }
+
+  timer_ended(timer) {
+    return this.get_time_remaining(timer) <= 0
+  }
+
+  process_controls() {
     if (
-      this.is_pressed('LEFT') && 
+      this.is_pressed('LEFT') &&
       (!this.is_pressed('RIGHT') || this.time_since_pressed('LEFT') < this.time_since_pressed('RIGHT'))
     ) {
       if (this.is_just_pressed('LEFT')) {
         this.apply('left');
         // cancel the RIGHT das charge when changing directions
         if (this.is_pressed('RIGHT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
-          this.pressed['RIGHT'] = (new Date).getTime(); 
+          this.pressed['RIGHT'] = (new Date).getTime();
         }
       } else {
         if (this.time_since_pressed('LEFT') > this.config.DAS) {
@@ -96,7 +124,7 @@ export class PlayerController {
       if (this.is_just_pressed('RIGHT')) {
         // cancel the LEFT das charge when changing directions
         if (this.is_pressed('LEFT') && this.config.CANCEL_DAS_ON_DIRECTION_CHANGE) {
-          this.pressed['LEFT'] = (new Date).getTime(); 
+          this.pressed['LEFT'] = (new Date).getTime();
         }
         this.apply('right');
       } else {
@@ -106,8 +134,10 @@ export class PlayerController {
         }
       }
     }
-
-    if (this.is_pressed('SOFT_DROP')) {
+    if (this.is_just_pressed('START')) {
+      this.apply('start');
+    }
+    if (this.is_just_pressed('SOFT_DROP')) {
       // TODO: Soft drop arr
       this.apply('sd+')
     }
@@ -127,16 +157,67 @@ export class PlayerController {
       this.apply('hold');
   }
 
+  process_timers() {
+    // gravity
+    if (this.timer_ended("gravity")) {
+      this.apply('sd');
+      this.set_timer('gravity', this.ruleset.timers.gravity)
+    }
+
+    // das / arr
+
+
+    // soft drop arr
+
+
+    // lock delay logic
+    if (this.stacker.is_piece_on_floor()) {
+      if (!this.was_on_floor) {
+        this.set_timer('lockDelay', this.ruleset.timers.lockDelay);
+        this.set_timer('lockDelayExtension', this.ruleset.timers.maximumLockDelayExtension);
+      }
+
+      if (this.previousPiecePosition && (
+        this.previousPiecePosition.x != this.stacker.piece.x ||
+        this.previousPiecePosition.y != this.stacker.piece.y ||
+        this.previousPiecePosition.r != this.stacker.piece.r)
+      ) {
+        this.set_timer('lockDelay', this.ruleset.timers.lockDelay);
+      }
+    } else {
+      this.clear_timer('lockDelay');
+      this.clear_timer('lockDelayExtension');
+    }
+    this.previousPiecePosition = { ...this.stacker.piece }
+    this.was_on_floor = this.stacker.is_piece_on_floor();
+
+    if (this.timer_ended("maximumTimeBeforeLock") ||
+      this.timer_ended("lockDelay") ||
+      this.timer_ended("lockDelayExtension")
+    ) {
+      this.apply('hd');
+    }
+
+  }
+
+  // override this function if you have anything you want to process every frame (60fps)
+  process() {
+    this.process_controls()
+    this.process_timers()
+  }
+
+  // run the loop, preferred if you override process functions if you want to change something
   loop(delta) {
     this.process(delta)
 
     this.previousPressed = { ...this.pressed };
     if (!this.stopped)
       requestAnimationFrame(this.loop.bind(this));
-      //setTimeout(this.loop.bind(this), 1000)
+    //setTimeout(this.loop.bind(this), 1000)
   }
 
   start() {
+    this.stopped = false;
     this.apply('start');
     this.loop(0);
   }

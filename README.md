@@ -5,10 +5,11 @@ lightweight, quickly moddable multiplayer ~~tetris~~ block stacker. it's competi
 ## todo
 
 sprint 1
-- controller class
-- timers
-- big das / arr
+x- controller class
+x- timers
+- das / arr
 - controls setup
+- seeded random
 
 sprint 2
 - damage calc
