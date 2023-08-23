@@ -5,38 +5,38 @@ lightweight, quickly moddable multiplayer ~~tetris~~ block stacker. it's competi
 ## todo
 
 sprint 1
-x- controller class
-x- timers
-x big das / arr
-- controls form / setup
-- seeded random for queue
+-[x] controller class
+-[x] timers
+-[x] big das / arr
+-[ ] controls form / setup
+-[ ] seeded random for queue
 
 sprint 2
-- damage calc
-- additional operations (set board, add garbage)
-- garbage bar drawing
-- death logic
+-[ ] damage calc
+-[ ] additional operations (set board, add garbage)
+-[ ] garbage bar drawing
+-[ ] death logic
 
 sprint 3
-- socket code
-- room creation
-- online controller
-- multiplayer gaming
+-[ ] socket code
+-[ ] room creation
+-[ ] online controller
+-[ ] multiplayer gaming
 
 sprint 4
-- spectator mode
+-[ ] spectator mode
 
 sprint 5
-- mod submission / setup
-- more ruleset options, for easier modding
+-[ ] mod submission / setup
+-[ ] more ruleset options, for easier modding
 
 stretch and beyond
-- replays
-- controller support
-- local support
-- line clear delay
-- keyboard overlay?
-- making 900 billion fun gamemodes!!!
+-[ ] replays
+-[ ] controller support
+-[ ] local support
+-[ ] line clear delay
+-[ ] keyboard overlay?
+-[ ] making 900 billion fun gamemodes!!!
 
 ## run
 
