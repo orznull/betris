@@ -40,7 +40,7 @@ stretch and beyond
 
 ## run
 
-it's a next app man
+it's a next app man, game is at `localhost:3000/game`
 
 ```
 npm i
