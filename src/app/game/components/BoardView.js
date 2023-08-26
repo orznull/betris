@@ -24,8 +24,9 @@ export default function BoardView({ stacker }) {
     }
   }, [])
 
-
   // TODO: refactor this to make view generate its own canvases
+
+  // TODO: check game focus
   return (
     <main ref={viewInitRef} id="container" className="flex items-start">
       <canvas ref={viewInitRef} id="hold" className="m-4"></canvas>

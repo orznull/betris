@@ -1,3 +1,5 @@
+import Alea from "alea";
+
 const ROTATE = {
     'spawn': {
         'no': 'spawn',
@@ -34,7 +36,7 @@ export class Stacker {
         // ... add more if you want.
     }
 
-    constructor(ruleset) {
+    constructor(ruleset, seed = Math.random()) {
         Object.assign(this, {
             matrix: [],
             hold: "",
@@ -49,6 +51,8 @@ export class Stacker {
             _bag: [],
         });
         this.EMPTY_ROW = this.makeEmptyRow()
+        // used only for queue
+        this.seededRNG = new Alea(seed)
     }
 
     makeEmptyRow() {
@@ -89,6 +93,7 @@ export class Stacker {
             this.piece = null;
             return null;
         }
+        this.hasUsedHold = false;
         let type = queue[0];
         this.queue = queue.substring(1);
         let [x, y] = this.ruleset.shapes[type].spawn;
@@ -106,7 +111,7 @@ export class Stacker {
             if (!this._bag || this._bag.length === 0) {
                 this._bag = Object.keys(this.ruleset.shapes).slice(0);
             }
-            let i = Math.floor(Math.random() * this._bag.length);
+            let i = Math.floor(this.seededRNG() * this._bag.length);
             let type = this._bag.splice(i, 1)[0];
             this.queue += type;
         }
@@ -284,12 +289,14 @@ export class Stacker {
                 break;
 
             case 'hold':
+                if (this.hasUsedHold) break;
                 let hold = this.hold;
                 this.hold = this.piece ? this.piece.type : '';
                 if (hold !== '') {
                     this.queue = hold + this.queue;
                 }
                 this.#spawn();
+                this.hasUsedHold = true;
                 break;
 
             // horizontal movement
@@ -340,4 +347,7 @@ export class Stacker {
 }
 
 
-window.Stacker = Stacker;
+try {
+    window.Stacker = Stacker;
+    window.alea = Alea;
+} catch (e) { }

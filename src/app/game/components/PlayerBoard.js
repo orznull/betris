@@ -3,6 +3,7 @@ import defaultRuleset from '@/game-logic/config/default-ruleset';
 import React, { useState, useEffect } from 'react';
 import BoardView from './BoardView';
 import { PlayerController } from '@/game-logic/controller/PlayerController';
+import { getSavedKeybinds } from '../lib';
 
 export default function PlayerBoard() {
 
@@ -24,8 +25,8 @@ export default function PlayerBoard() {
     let s = new Stacker(defaultRuleset);
     if (window.customStacker) {
       // TODO: check for existence of custom ruleset, then use custom stacker otherwise
-    } 
-    const c = new PlayerController(s, { binds: {} });
+    }
+    const c = new PlayerController(s, getSavedKeybinds());
     c.start();
 
     setStacker(s);
@@ -35,9 +36,9 @@ export default function PlayerBoard() {
       c.stop();
     }
   }, []);
-  
-  if(!stacker) return <></>
-  
+
+  if (!stacker) return <></>
+
   return (
     <div tabIndex={0} onKeyDown={onKeyDown} onKeyUp={onKeyUp}>
       <BoardView stacker={stacker} />

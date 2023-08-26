@@ -5,24 +5,23 @@ export class PlayerController {
   // These two fields will automatically populate the config menu.
   static DEFAULT_CONFIG = {
     DAS: 80,
-    ARR: 1,
-    SOFT_DROP_ARR: 1,
+    ARR: 0,
+    SOFT_DROP_ARR: 0,
     CANCEL_DAS_ON_DIRECTION_CHANGE: true
     // ... add any additional 
   }
   static DEFAULT_KEYBINDS = {
     START: 'r',
-    LEFT: 'j',
-    RIGHT: 'l',
-    COUNTER_CLOCKWISE: 'a',
-    CLOCKWISE: 's',
-    HOLD: 'd',
-    '180': 'w',
-    SOFT_DROP: 'k',
+    LEFT: 'left',
+    RIGHT: 'right',
+    COUNTER_CLOCKWISE: 'z',
+    CLOCKWISE: 'x',
+    HOLD: 'c',
+    '180': 'a',
+    SOFT_DROP: 'down',
     HARD_DROP: 'space',
     // ... add additional keybinds for additional actions if desired
   };
-
 
   constructor(stacker, binds, config, socket) {
     Object.assign(this, {
@@ -239,4 +238,7 @@ export class PlayerController {
   }
 
 }
-window.Controller = PlayerController;
+
+try {
+  window.Controller = PlayerController;
+} catch (e) { }

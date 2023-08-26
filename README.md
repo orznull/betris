@@ -8,7 +8,7 @@ sprint 1
 - [x] controller class
 - [x] timers
 - [x] big das / arr
-- [ ] controls form / setup
+- [x] controls form / setup
 - [ ] seeded random for queue
 
 sprint 2
