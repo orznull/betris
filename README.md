@@ -9,7 +9,7 @@ sprint 1
 - [x] timers
 - [x] big das / arr
 - [x] controls form / setup
-- [ ] seeded random for queue
+- [x] seeded random for queue
 
 sprint 2
 - [ ] damage calc
